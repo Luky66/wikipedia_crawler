@@ -1,3 +1,12 @@
+# Safety note: This is ugly as hell and I know. Use at your own risk
+# This was actually a project after I haven't touched python in about 7 years.
+
+# Current Bugs:
+# Doesn't work when having to search more than one page to find the target link
+
+# To resolve I will need to restructure this and make it call recursively
+
+
 import requests
 from bs4 import BeautifulSoup
 

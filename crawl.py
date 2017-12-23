@@ -10,22 +10,21 @@ def wikipedia_links_to_page(startPage, targetPage):
 
     uncrawled_pages.append(crawl_wikipedia_page(startPage))
 
-    while done != True and len(uncrawled_pages) != 0
+    while not done and not uncrawled_pages:
 
         # add the links of the start page to the list
-        
 
-        for item in wikiText.findAll("a"):
+        for item in uncrawled_pages[0][0]:
             link = item["href"]
             
             if link == targetPage:
                 print("We found the page with link: "+link)
                 done = True
             
-        if done == False:
+        if not done:
             uncrawled_pages.append(crawl_wikipedia_page(uncrawled_pages[0][0]))
             del uncrawled_pages[0][0]
-            if len(uncrawled_pages[0]) == 0:
+            if not uncrawled_pages[0]:
                 del uncrawled_pages[0]
     
     if done:
@@ -36,12 +35,14 @@ def wikipedia_links_to_page(startPage, targetPage):
 
 
 def crawl_wikipedia_page(page):
-    html = requests.get(startPage)
+    html = requests.get(page)
     plain_text = html.text
     soup = BeautifulSoup(plain_text, "html.parser")
-    wikiText = soup.body.find("div", {"id": "mw-content-text"}).div
+    wiki_text = soup.body.find("div", {"id": "mw-content-text"}).div
 
-    return wikiText.findAll("a")
+    return wiki_text.findAll("a")
 
 
-findWikiPageFromLinks("https://en.wikipedia.org/wiki/World_War_II", "https://en.wikipedia.org/wiki/Adolf_Hitler")
+wikipedia_links_to_page(
+    "https://en.wikipedia.org/wiki/World_War_II",
+    "https://en.wikipedia.org/wiki/Adolf_Hitler")

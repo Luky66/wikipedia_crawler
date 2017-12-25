@@ -6,55 +6,83 @@
 
 # To resolve I will need to restructure this and make it call recursively
 
+"This module crawls the web for you."
 
+import re
 import requests
 from bs4 import BeautifulSoup
 
 
-def wikipedia_links_to_page(startPage, targetPage):
-    jumps = 0
-    jump_points = []
-    uncrawled_pages = []
+def wikipedia_links_to_page(start_page, target_page, max_link_jumps):
+    """
+        This function counts the link jumps needed
+        from a Wikipedia start page to a Wikipedia target page.
+    """
+
+    depth = 0
+    links_of_same_depth = []
+    child_links = []
     done = False
 
-    uncrawled_pages.append(crawl_wikipedia_page(startPage))
-    print("Started with "+str(len(uncrawled_pages[0]))+" links")
+    links_of_same_depth.append(start_page)
 
-    while not done or not uncrawled_pages:
+    while not done:
 
-        # add the links of the start page to the list
+        for link in links_of_same_depth:
+            new_links = crawl_wikipedia_page(link)
 
-        for item in uncrawled_pages[0]:
-            link = item["href"]
-            
-            if link == targetPage:
-                done = True
+            for new_link in new_links:
+                if new_link == target_page:
+                    done = True
+                    break
+
+            if done:
                 break
-            
-        if not done:
-            print("Crawling new page: "+str(uncrawled_pages[0][0]))
-            jumps += 1
+            else:
+                child_links.append(new_links)
 
-            uncrawled_pages.append(crawl_wikipedia_page(uncrawled_pages[0][0]["href"]))
-            del uncrawled_pages[0][0]
-            if not uncrawled_pages[0]:
-                del uncrawled_pages[0]
-    
-    if done:
-        print("The target page '"+targetPage+"' was found with "+str(jumps+1)+" jumps")
-    else:
-        print("the target page wasn't found")
+        if done:
+            print("Found the page "+str(depth+1)+" link(s) away!")
+        else:
+            if depth+1 >= max_link_jumps:
+                print("Exiting... Page not found at max depth "+depth)
+                done = True
+            else:
+                if not child_links:
+                    print("Going deeper...")
+                    links_of_same_depth = child_links
+                    child_links = []
+                    depth += 1
+                else:
+                    print("Exiting... Came to a dead end.")
+                    done = True
 
 
 
-def crawl_wikipedia_page(page):
-    print("Crawling "+page)
-    html = requests.get(page)
+
+
+def crawl_wikipedia_page(page_link):
+    """
+        returns a list with all the the links of a wikipedia page to different wikipedia pages
+    """
+
+    print("Crawling "+str(page_link))
+    html = requests.get(page_link)
     plain_text = html.text
     soup = BeautifulSoup(plain_text, "html.parser")
     wiki_text = soup.body.find("div", {"id": "mw-content-text"}).div
 
-    return wiki_text.findAll("a", {"href": True})
+    link_items = wiki_text.findAll("a", {"href": re.compile("/wiki/.*")})
+
+    links = []
+    for item in link_items:
+        links.append("https://en.wikipedia.org"+item["href"])
+
+    print("Found "+str(len(links))+" links crawling")
+    return links
 
 
-wikipedia_links_to_page("https://en.wikipedia.org/wiki/World_War_II", "/wiki/Adolf_Hitler")
+wikipedia_links_to_page(
+    "https://en.wikipedia.org/wiki/World_War_II",
+    "https://en.wikipedia.org/wiki/Adolf_Hitler",
+    3)

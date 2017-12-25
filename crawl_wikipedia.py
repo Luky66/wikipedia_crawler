@@ -18,6 +18,7 @@ def wikipedia_links_to_page(start_page, target_page, max_link_jumps):
         This function counts the link jumps needed
         from a Wikipedia start page to a Wikipedia target page.
     """
+    print("Searching "+target_page+" from "+start_page+" over less than "+str(max_link_jumps)+" links")
 
     depth = 0
     links_of_same_depth = []
@@ -35,27 +36,34 @@ def wikipedia_links_to_page(start_page, target_page, max_link_jumps):
                 if new_link == target_page:
                     done = True
                     break
+                else:
+                    if new_link not in child_links and new_link not in links_of_same_depth:
+                        child_links.append(new_link)
 
             if done:
                 break
             else:
-                child_links.append(new_links)
+                print(str(len(child_links))+" link(s) on "+link)
 
         if done:
-            print("Found the page "+str(depth+1)+" link(s) away!")
+            print("\n\n\nFound the target page:\n\n"+start_page+"\n    ...\n    "+str(depth+1)+" link(s)\n    ...\n"+target_page+"\n\n\n")
+            return depth+1
         else:
             if depth+1 >= max_link_jumps:
-                print("Exiting... Page not found at max depth "+depth)
+                print("\n\n\nExiting... Page not found at max depth "+depth+"\n\n\n")
                 done = True
+                return -2
             else:
                 if not child_links:
-                    print("Going deeper...")
+                    print("\n\n\nExiting... Came to a dead end.\n\n\n")
+                    done = True
+                    return -1
+                else:
+                    print("\nGoing one layer deeper\n")
                     links_of_same_depth = child_links
                     child_links = []
                     depth += 1
-                else:
-                    print("Exiting... Came to a dead end.")
-                    done = True
+                    
 
 
 
@@ -72,17 +80,23 @@ def crawl_wikipedia_page(page_link):
     soup = BeautifulSoup(plain_text, "html.parser")
     wiki_text = soup.body.find("div", {"id": "mw-content-text"}).div
 
-    link_items = wiki_text.findAll("a", {"href": re.compile("/wiki/.*")})
+    link_items = wiki_text.findAll("a", {"href": re.compile("/wiki/.*$")})
 
     links = []
     for item in link_items:
-        links.append("https://en.wikipedia.org"+item["href"])
+        link = item["href"]
+
+        if "http" not in link:
+            link = "https://en.wikipedia.org"+link
+
+        if "https://en.wikipedia.org" in link:
+            links.append(link)
 
     print("Found "+str(len(links))+" links crawling")
     return links
 
 
 wikipedia_links_to_page(
-    "https://en.wikipedia.org/wiki/World_War_II",
+    "https://en.wikipedia.org/wiki/Donald_Trump",
     "https://en.wikipedia.org/wiki/Adolf_Hitler",
     3)
